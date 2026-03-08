@@ -36,7 +36,9 @@ export default function ClientHosting() {
   const [orders, setOrders] = useState<HostingOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly");
+  const [purchasing, setPurchasing] = useState<string | null>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     async function load() {
