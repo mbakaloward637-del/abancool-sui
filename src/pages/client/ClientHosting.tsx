@@ -55,12 +55,37 @@ export default function ClientHosting() {
     load();
   }, []);
 
-  const handlePurchase = (plan: HostingPlan) => {
-    // This will trigger the payment flow (M-Pesa / Stripe) once integrated
-    toast({
-      title: "Payment Integration Coming Soon",
-      description: `To purchase the ${plan.name} plan (KSh ${billingCycle === "monthly" ? plan.price_monthly : plan.price_yearly}/${billingCycle === "monthly" ? "mo" : "yr"}), payment via M-Pesa or Stripe will be available shortly.`,
+  const handlePurchase = async (plan: HostingPlan) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    setPurchasing(plan.id);
+    const price = billingCycle === "monthly" ? plan.price_monthly : (plan.price_yearly || plan.price_monthly * 10);
+    const invoiceNumber = `INV-${Date.now().toString().slice(-8)}`;
+
+    // Create hosting order
+    await supabase.from("hosting_orders").insert({
+      user_id: user.id,
+      plan_id: plan.id,
+      billing_cycle: billingCycle,
+      amount_paid: 0,
+      status: "pending",
     });
+
+    // Create invoice
+    await supabase.from("invoices").insert({
+      invoice_number: invoiceNumber,
+      user_id: user.id,
+      service_type: "hosting",
+      service_description: `${plan.name} Hosting Plan (${billingCycle})`,
+      amount: price,
+      status: "unpaid",
+      due_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    });
+
+    setPurchasing(null);
+    toast({ title: "Order created!", description: "Redirecting to payment..." });
+    navigate("/client/dashboard/payments");
   };
 
   if (loading) {
