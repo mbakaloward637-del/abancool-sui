@@ -1,5 +1,7 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, ArrowRight, Shield, Zap, Clock, Headphones, Star, Server, Globe, Lock, HardDrive } from "lucide-react";
 import datacenter from "@/assets/hero-datacenter.jpg";
@@ -63,6 +65,41 @@ const fadeUp = {
 };
 
 export default function HostingPage() {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const handleOrderNow = async (plan: typeof plans[0]) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    // Store selected plan in sessionStorage
+    sessionStorage.setItem("selected_hosting_plan", JSON.stringify(plan));
+    
+    if (!user) {
+      toast({ title: "Login required", description: "Please sign in or create an account to order a hosting plan." });
+      navigate("/client/login");
+      return;
+    }
+
+    // User is logged in — create invoice and redirect to payments
+    const price = plan.period === "month" 
+      ? parseInt(plan.price.replace(/,/g, "")) 
+      : parseInt(plan.price.replace(/,/g, ""));
+    const invoiceNumber = `INV-${Date.now().toString().slice(-8)}`;
+
+    await supabase.from("invoices").insert({
+      invoice_number: invoiceNumber,
+      user_id: user.id,
+      service_type: "hosting",
+      service_description: `${plan.name} Hosting Plan (${plan.period}ly)`,
+      amount: price,
+      status: "unpaid",
+      due_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    });
+
+    toast({ title: "Order created!", description: "Redirecting to payment..." });
+    navigate("/client/dashboard/payments");
+  };
+
   return (
     <>
       {/* Hero */}
@@ -164,7 +201,9 @@ export default function HostingPage() {
                     </li>
                   ))}
                 </ul>
-                <Button className={`w-full rounded-sm font-semibold uppercase text-xs tracking-wider ${
+                <Button 
+                  onClick={() => handleOrderNow(plan)}
+                  className={`w-full rounded-sm font-semibold uppercase text-xs tracking-wider ${
                   plan.popular
                     ? "bg-accent text-accent-foreground hover:bg-accent/90"
                     : "bg-primary text-primary-foreground hover:bg-primary/90"
