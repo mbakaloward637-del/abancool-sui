@@ -25,6 +25,7 @@ const ClientInvoices = lazy(() => import("./pages/client/ClientInvoices"));
 const ClientPayments = lazy(() => import("./pages/client/ClientPayments"));
 const ClientSupport = lazy(() => import("./pages/client/ClientSupport"));
 const ClientProfile = lazy(() => import("./pages/client/ClientProfile"));
+const ClientCpanel = lazy(() => import("./pages/client/ClientCpanel"));
 const AdminLayout = lazy(() => import("./pages/admin/AdminLayout"));
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -68,6 +69,7 @@ const App = () => (
             <Route path="/client/login" element={<ClientLoginPage />} />
             <Route path="/client/dashboard" element={<ClientDashboardLayout />}>
               <Route index element={<DashboardOverview />} />
+              <Route path="cpanel" element={<ClientCpanel />} />
               <Route path="hosting" element={<ClientHosting />} />
               <Route path="domains" element={<ClientDomains />} />
               <Route path="invoices" element={<ClientInvoices />} />
