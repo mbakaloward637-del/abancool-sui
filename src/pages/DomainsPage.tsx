@@ -93,13 +93,54 @@ export default function DomainsPage() {
 
   const cartTotal = cart.reduce((s, c) => s + c.price * (regYears[c.domain] || 1), 0);
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (cart.length === 0) {
       toast({ title: "Empty cart", description: "Add at least one domain to register.", variant: "destructive" });
       return;
     }
-    toast({ title: "Registration submitted!", description: "This will connect to WHMCS API for processing. You'll receive a confirmation email." });
+
+    // Check if user is logged in
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast({ title: "Login required", description: "Please sign in or create an account to proceed with payment." });
+      // Store cart in sessionStorage so we can resume after login
+      sessionStorage.setItem("domain_cart", JSON.stringify({ cart, regYears, regForm, cartTotal }));
+      navigate("/client/login");
+      return;
+    }
+
+    // Create domain records and invoice, then redirect to payments
+    const invoiceNumber = `INV-${Date.now().toString().slice(-8)}`;
+    const domainNames = cart.map(c => c.domain).join(", ");
+
+    // Insert invoice
+    await supabase.from("invoices").insert({
+      invoice_number: invoiceNumber,
+      user_id: user.id,
+      service_type: "domain",
+      service_description: `Domain registration: ${domainNames}`,
+      amount: cartTotal,
+      status: "unpaid",
+      due_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    });
+
+    // Insert domain records
+    for (const c of cart) {
+      const ext = c.ext;
+      const name = c.domain.replace(ext, "");
+      await supabase.from("domains").insert({
+        user_id: user.id,
+        name: name,
+        extension: ext,
+        status: "pending",
+        expires_at: new Date(Date.now() + (regYears[c.domain] || 1) * 365 * 24 * 60 * 60 * 1000).toISOString(),
+      });
+    }
+
+    toast({ title: "Domains reserved!", description: "Redirecting to payment..." });
+    setShowRegForm(false);
+    navigate("/client/dashboard/payments");
   };
 
   return (
