@@ -82,7 +82,7 @@ export default function HomePage() {
             className="max-w-3xl"
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
+            transition={{ duration: 0.8 }}
           >
             <p className="text-accent font-bold text-sm uppercase tracking-[0.25em] mb-4">
               It's who we are. It's what we do.
