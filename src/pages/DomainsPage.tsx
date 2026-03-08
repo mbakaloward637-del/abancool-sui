@@ -29,6 +29,7 @@ const domainFeatures = [
 type SearchResult = { domain: string; ext: string; available: boolean; price: number; premium?: boolean };
 
 export default function DomainsPage() {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [query, setQuery] = useState("");
   const [searched, setSearched] = useState(false);
