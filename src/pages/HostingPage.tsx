@@ -180,11 +180,6 @@ export default function HostingPage() {
                       or KSh {plan.monthly}/month
                     </div>
                   )}
-                  {plan.yearly && (
-                    <div className={`text-xs mb-6 ${plan.popular ? "text-hero-foreground/40" : "text-muted-foreground/60"}`}>
-                      or KSh {plan.yearly}/year
-                    </div>
-                  )}
                 </div>
                 <ul className="space-y-2 mb-6 flex-1">
                   {plan.features.map((f) => (
